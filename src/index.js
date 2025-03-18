@@ -8,30 +8,45 @@ app.use(express.json());
 let loans = {};
 
 // Utility function to generate loan schedule
-const generateSchedule = (amount, weeks, interestRate) => {
+const generateSchedule = (amount, weeks, interestRate, startDate) => {
     const totalAmount = amount + (amount * interestRate);
     const weeklyPayment = parseFloat((totalAmount / weeks).toFixed(2));
     let schedule = [];
+    
     for (let i = 1; i <= weeks; i++) {
-        schedule.push({ week: i, amount: weeklyPayment, paid: false });
+        let dueDate = new Date(startDate);
+        dueDate.setDate(dueDate.getDate() + (i - 1) * 7); // Each payment is due 7 days apart
+
+        schedule.push({
+            week: i,
+            amount: weeklyPayment,
+            paid: false,
+            dueDate: dueDate.toISOString().split('T')[0] // Store date as YYYY-MM-DD
+        });
     }
     return schedule;
 };
 
+
 // Create Loan
 app.post("/loan", (req, res) => {
-    const { borrowerId, amount, weeks, interestRate } = req.body;
+    const { borrowerId, amount, weeks, interestRate, startDate } = req.body;
     if (loans[borrowerId]) return res.status(400).json({ error: "Loan already exists" });
+
+    const loanStartDate = startDate ? new Date(startDate) : new Date(); // Default to today if not provided
     loans[borrowerId] = {
         amount,
         outstanding: amount + (amount * interestRate),
         weeks,
         interestRate,
-        schedule: generateSchedule(amount, weeks, interestRate),
+        startDate: loanStartDate.toISOString().split('T')[0], // Store loan start date
+        schedule: generateSchedule(amount, weeks, interestRate, loanStartDate),
         missedPayments: 0
     };
+
     res.json({ message: "Loan created successfully", loan: loans[borrowerId] });
 });
+
 
 // Get Outstanding Balance
 app.get("/loan/:borrowerId/outstanding", (req, res) => {
@@ -42,17 +57,16 @@ app.get("/loan/:borrowerId/outstanding", (req, res) => {
 
 // Helper function to count missed payments correctly
 const countMissedPayments = (loan) => {
-    const currentWeek = loan.schedule.findIndex(payment => !payment.paid); // First unpaid week
-    return loan.schedule.slice(0, currentWeek).filter(payment => !payment.paid).length;
+    const today = new Date().toISOString().split('T')[0]; // Current date in YYYY-MM-DD format
+    return loan.schedule.filter(payment => !payment.paid && payment.dueDate < today).length;
 };
-
 
 // Check if Borrower is Delinquent (Updated)
 app.get("/loan/:borrowerId/delinquent", (req, res) => {
     const loan = loans[req.params.borrowerId];
     if (!loan) return res.status(404).json({ error: "Loan not found" });
 
-    loan.missedPayments = countMissedPayments(loan); // Update missed payments correctly
+    loan.missedPayments = countMissedPayments(loan);
     res.json({ delinquent: loan.missedPayments >= 2 });
 });
 
