@@ -1,0 +1,31 @@
+@host = http://localhost:3000
+
+### POST loan
+POST {{host}}/loan
+content-type: application/json
+
+{
+  "borrowerId": "123",
+  "amount": 500,
+  "weeks": 50,
+  "interestRate": 10
+}
+
+### GET outstanding amount
+GET {{host}}/loan/123/outstanding
+
+### GET delinquent status
+GET {{host}}/loan/123/delinquent
+
+### GET schedule
+GET {{host}}/loan/123/schedule
+
+### POST payment
+POST {{host}}/loan/123/pay
+content-type: application/json
+
+{
+  "amount": "110"
+}
+
+
