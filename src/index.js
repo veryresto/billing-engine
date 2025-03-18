@@ -40,6 +40,13 @@ app.get("/loan/:borrowerId/outstanding", (req, res) => {
     res.json({ outstanding: loan.outstanding });
 });
 
+// Helper function to count missed payments correctly
+const countMissedPayments = (loan) => {
+    const currentWeek = loan.schedule.findIndex(payment => !payment.paid); // First unpaid week
+    return loan.schedule.slice(0, currentWeek).filter(payment => !payment.paid).length;
+};
+
+
 // Check if Borrower is Delinquent
 app.get("/loan/:borrowerId/delinquent", (req, res) => {
     const loan = loans[req.params.borrowerId];
