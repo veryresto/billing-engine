@@ -47,6 +47,12 @@ app.post("/loan", (req, res) => {
     res.json({ message: "Loan created successfully", loan: loans[borrowerId] });
 });
 
+// Get Loan Details
+app.get("/loan/:borrowerId", (req, res) => {
+    const loan = loans[req.params.borrowerId];
+    if (!loan) return res.status(404).json({ error: "Loan not found" });
+    res.json(loan);
+});
 
 // Get Outstanding Balance
 app.get("/loan/:borrowerId/outstanding", (req, res) => {

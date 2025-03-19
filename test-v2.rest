@@ -8,8 +8,12 @@ content-type: application/json
   "borrowerId": "123",
   "amount": 500,
   "weeks": 50,
-  "interestRate": 10
+  "interestRate": 10,
+  "startDate": "2025-02-29"
 }
+
+### GET loan info
+GET {{host}}/loan/123
 
 ### GET outstanding amount
 GET {{host}}/loan/123/outstanding
