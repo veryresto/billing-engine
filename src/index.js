@@ -56,9 +56,9 @@ app.get("/loan/:borrowerId/outstanding", (req, res) => {
 });
 
 // Helper function to count missed payments correctly
-const countMissedPayments = (loan) => {
+const getMissedPayments = (loan) => {
     const today = new Date().toISOString().split('T')[0]; // Current date in YYYY-MM-DD format
-    return loan.schedule.filter(payment => !payment.paid && payment.dueDate < today).length;
+    return loan.schedule.filter(payment => !payment.paid && payment.dueDate < today);
 };
 
 // Check if Borrower is Delinquent (Updated)
@@ -66,8 +66,8 @@ app.get("/loan/:borrowerId/delinquent", (req, res) => {
     const loan = loans[req.params.borrowerId];
     if (!loan) return res.status(404).json({ error: "Loan not found" });
 
-    loan.missedPayments = countMissedPayments(loan);
-    res.json({ delinquent: loan.missedPayments >= 2 });
+    loan.missedPayments = getMissedPayments(loan).length;
+    res.json({ delinquent: loan.missedPayments >= 2, missedPayments: getMissedPayments(loan) });
 });
 
 // Make Payment
@@ -89,8 +89,7 @@ app.post("/loan/:borrowerId/pay", (req, res) => {
     
     nextDue.paid = true;
     loan.outstanding -= amount;
-    loan.missedPayments = countMissedPayments(loan);
-    res.json({ message: "Payment successful", loan });
+    res.json({ message: "Payment successful" });
 });
 
 // Get Loan Schedule
