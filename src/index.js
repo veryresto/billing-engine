@@ -81,20 +81,19 @@ app.post("/loan/:borrowerId/pay", (req, res) => {
     const { borrowerId } = req.params;
     const loan = loans[borrowerId];
     if (!loan) return res.status(404).json({ error: "Loan not found" });
-    
-    let nextDue = loan.schedule.find(payment => !payment.paid);
-    if (!nextDue) return res.status(400).json({ error: "Loan fully paid" });
-    
+
+    let now = new Date().toISOString().split("T")[0];
+    let duePayments = loan.schedule.filter(payment => !payment.paid && payment.dueDate <= now);
+    if (duePayments.length === 0) return res.status(400).json({ error: "No due payments available for payment" });
+
+    const totalDueAmount = duePayments.reduce((sum, p) => sum + p.amount, 0);
     const { amount } = req.body;
-    console.log(amount, nextDue.amount);
-    // if (amount !== nextDue.amount) return res.status(400).json({ error: `Must pay exact amount ${amount} ${nextDue.amount}` });
-    if (Math.abs(amount - nextDue.amount) > 0.01) {
-        return res.status(400).json({ error: "Must pay exact amount" });
-    }
-    
-    
-    nextDue.paid = true;
+
+    if (Math.abs(amount - totalDueAmount) > 0.01)return res.status(400).json({ error: `Must pay exact amount: ${totalDueAmount} USD` });
+
+    duePayments.forEach(payment => payment.paid = true);
     loan.outstanding -= amount;
+    loan.missedPayments = loan.schedule.filter(payment => !payment.paid && payment.dueDate < now).length;
     res.json({ message: "Payment successful" });
 });
 
