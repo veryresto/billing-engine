@@ -1,35 +1,36 @@
 @host = http://localhost:3000
+@userId = user123
 
 ### POST loan
 POST {{host}}/loan
 content-type: application/json
 
 {
-  "borrowerId": "123",
+  "borrowerId": "{{userId}}",
   "amount": 500,
   "weeks": 50,
-  "interestRate": 10,
+  "interestRate": 0.1,
   "startDate": "2025-03-12"
 }
 
 ### GET loan info
-GET {{host}}/loan/123
+GET {{host}}/loan/{{userId}}
 
 ### GET outstanding amount
-GET {{host}}/loan/123/outstanding
+GET {{host}}/loan/{{userId}}/outstanding
 
 ### GET delinquent status
-GET {{host}}/loan/123/delinquent
+GET {{host}}/loan/{{userId}}/delinquent
 
 ### GET schedule
-GET {{host}}/loan/123/schedule
+GET {{host}}/loan/{{userId}}/schedule
 
 ### POST payment
-POST {{host}}/loan/123/pay
+POST {{host}}/loan/{{userId}}/pay
 content-type: application/json
 
 {
-  "amount": "110"
+  "amount": "11"
 }
 
 
