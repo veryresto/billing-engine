@@ -13,19 +13,21 @@ const generateSchedule = (amount, weeks, interestRate, startDate) => {
     const weeklyPayment = parseFloat((totalAmount / weeks).toFixed(2));
     let schedule = [];
     
-    for (let i = 1; i <= weeks; i++) {
-        let dueDate = new Date(startDate);
-        dueDate.setDate(dueDate.getDate() + (i - 1) * 7); // Each payment is due 7 days apart
+    let currentDate = new Date(startDate);
+    currentDate.setDate(currentDate.getDate() + 7); // First payment is due 1 week after start date
 
+    for (let i = 1; i <= weeks; i++) {
         schedule.push({
             week: i,
             amount: weeklyPayment,
             paid: false,
-            dueDate: dueDate.toISOString().split('T')[0] // Store date as YYYY-MM-DD
+            dueDate: new Date(currentDate).toISOString().split("T")[0] // Store as YYYY-MM-DD
         });
+        currentDate.setDate(currentDate.getDate() + 7); // Move to next week
     }
     return schedule;
 };
+
 
 
 // Create Loan
