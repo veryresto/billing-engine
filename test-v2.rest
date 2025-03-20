@@ -33,4 +33,6 @@ content-type: application/json
   "amount": "11"
 }
 
+### GET payment history
+GET {{host}}/loan/{{userId}}/payments
 
