@@ -74,8 +74,8 @@ app.post("/loan/:borrowerId/pay", (req, res) => {
     const totalDueAmount = duePayments.reduce((sum, p) => sum + p.amount, 0);
     const { amount } = req.body;
 
-    if (amount !== totalDueAmount) {
-        return res.status(400).json({ error: "Must pay exact amount of due payments" });
+    if (Math.abs(amount - totalDueAmount) > 0.01) {
+        return res.status(400).json({ error: "Must pay exact amount of due payments: " + totalDueAmount });
     }
 
     // Mark payments as paid and record payment transaction
