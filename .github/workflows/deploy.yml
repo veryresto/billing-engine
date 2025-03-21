@@ -20,4 +20,3 @@ jobs:
           script: |
             cd ~/billing-engine
             git pull
-            pm2 restart billing
