@@ -1,0 +1,23 @@
+# .github/workflows/deploy.yml
+
+name: Deploy to Linux Machine
+
+on:
+  push:
+    branches:
+      - billing-v4-swagger
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: SSH into Linux machine
+        uses: appleboy/ssh-action@v1.2.1
+        with:
+          host: ${{ secrets.LINUX_MACHINE_IP }}
+          username: ${{ secrets.LINUX_MACHINE_USERNAME }}
+          key: ${{ secrets.LINUX_MACHINE_SSH_PRIVATE_KEY }}
+          script: |
+            cd ~/billing-engine
+            git pull
+            pm2 restart billing
