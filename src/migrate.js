@@ -1,8 +1,8 @@
 const sequelize = require("./database");
 const Loan = require("./models/Loan");
-const Payment = require("./models/Payment");
+const Schedule = require("./models/Schedule");
 const Transaction = require("./models/Transaction");
-const TransactionPayment = require("./models/TransactionPayment");
+const TransactionSchedule = require("./models/TransactionSchedule");
 
 sequelize.sync({ force: true }) // WARNING: This will DROP existing tables before recreating them
     .then(() => {

@@ -10,7 +10,7 @@ app.use(express.json());
 let loans = {};
 
 // Real database
-const { Loan, Payment, Transaction, TransactionPayment } = require("./models");
+const { Loan, Schedule, Transaction, TransactionSchedule } = require("./models");
 const { Op } = require("sequelize"); 
 
 // Swagger Configuration
@@ -49,14 +49,14 @@ const generateSchedule = async (loanId, amount, weeks, interestRate, startDate) 
     }
 
     // Bulk insert payments
-    await Payment.bulkCreate(schedule);
+    await Schedule.bulkCreate(schedule);
 };
 
 // Helper to get missed payments
 const getMissedPayments = async (loanId) => {
     const today = new Date().toISOString().split("T")[0];
 
-    return await Payment.findAll({
+    return await Schedule.findAll({
         where: {
             loanId: loanId,
             paid: false,
@@ -102,6 +102,14 @@ const getMissedPayments = async (loanId) => {
 app.post("/loan", async (req, res) => {
     try {
         const { borrowerId, amount, weeks, interestRate, startDate } = req.body;
+
+        // Check if borrower already has a loan
+        const existingLoan = await Loan.findOne({ where: { borrowerId } });
+        if (existingLoan) {
+            return res.status(400).json({ error: "Borrower already has an active loan" });
+        }
+
+
         const loanStartDate = startDate ? new Date(startDate) : new Date();
         const totalAmount = amount + (amount * interestRate);
         const weeklyPayment = parseFloat((totalAmount / weeks).toFixed(2));
@@ -131,7 +139,7 @@ app.post("/loan", async (req, res) => {
             currentDate.setDate(currentDate.getDate() + 7); // Move to next week
         }
 
-        await Payment.bulkCreate(paymentSchedules);
+        await Schedule.bulkCreate(paymentSchedules);
 
         res.status(201).json({ message: "Loan created successfully", loan });
     } catch (error) {
@@ -191,7 +199,7 @@ app.get("/loan/:borrowerId/delinquent", async (req, res) => {
         if (!loan) return res.status(404).json({ error: "Loan not found" });
 
         const today = new Date();
-        const missedPayments = await Payment.findAll({
+        const missedPayments = await Schedule.findAll({
             where: { loanId: loan.id, paid: false, dueDate: { [Op.lt]: today } },
         });
 
@@ -241,7 +249,7 @@ app.post("/loan/:borrowerId/pay", async (req, res) => {
         if (!loan) return res.status(404).json({ error: "Loan not found" });
 
         const today = new Date();
-        const duePayments = await Payment.findAll({
+        const duePayments = await Schedule.findAll({
             where: { loanId: loan.id, paid: false, dueDate: { [Op.lte]: today } },
             order: [["dueDate", "ASC"]],
         });
@@ -266,7 +274,7 @@ app.post("/loan/:borrowerId/pay", async (req, res) => {
 
         // Link payments to the transaction
         for (const payment of duePayments) {
-            await TransactionPayment.create({
+            await TransactionSchedule.create({
                 id: uuidv4(),
                 transactionId: transaction.id,
                 paymentId: payment.id,
@@ -309,7 +317,7 @@ app.get("/loan/:borrowerId/schedule", async (req, res) => {
 
         if (!loan) return res.status(404).json({ error: "Loan not found" });
 
-        const schedule = await Payment.findAll({
+        const schedule = await Schedule.findAll({
             where: { loanId: loan.id },
             order: [["week", "ASC"]],
         });
@@ -349,7 +357,7 @@ app.get("/loan/:borrowerId/payments", async (req, res) => {
 
         const transactions = await Transaction.findAll({
             where: { loanId: loan.id },
-            include: [{ model: TransactionPayment, include: [Payment] }],
+            include: [{ model: TransactionSchedule, include: [Schedule] }],
             order: [["paymentDate", "ASC"]],
         });
 

@@ -1,6 +1,6 @@
 const Loan = require("./Loan");
-const Payment = require("./Payment");
+const Schedule = require("./Schedule");
 const Transaction = require("./Transaction");
-const TransactionPayment = require("./TransactionPayment");
+const TransactionSchedule = require("./TransactionSchedule");
 
-module.exports = { Loan, Payment, Transaction, TransactionPayment };
+module.exports = { Loan, Schedule, Transaction, TransactionSchedule };

@@ -2,7 +2,7 @@ const { DataTypes } = require("sequelize");
 const sequelize = require("../database");
 const Loan = require("./Loan");
 
-const Payment = sequelize.define("Payment", {
+const Schedule = sequelize.define("Schedule", {
     id: { type: DataTypes.UUID, defaultValue: DataTypes.UUIDV4, primaryKey: true },
     loanId: { type: DataTypes.UUID, allowNull: false, references: { model: Loan, key: "id" } },
     week: { type: DataTypes.INTEGER, allowNull: false },
@@ -11,7 +11,7 @@ const Payment = sequelize.define("Payment", {
     paid: { type: DataTypes.BOOLEAN, defaultValue: false }
 });
 
-Loan.hasMany(Payment, { foreignKey: "loanId" });
-Payment.belongsTo(Loan, { foreignKey: "loanId" });
+Loan.hasMany(Schedule, { foreignKey: "loanId" });
+Schedule.belongsTo(Loan, { foreignKey: "loanId" });
 
-module.exports = Payment;
+module.exports = Schedule;
