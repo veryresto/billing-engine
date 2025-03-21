@@ -9,8 +9,7 @@ app.use(express.json());
 let loans = {};
 
 // Real database
-const Loan = require("./models/Loan");
-const Payment = require("./models/Payment");
+const { Loan, Payment, Transaction, TransactionPayment } = require("./models");
 const { Op } = require("sequelize"); 
 
 // Swagger Configuration
@@ -30,7 +29,7 @@ const swaggerDocs = swaggerJsdoc(swaggerOptions);
 app.use("/swagger", swaggerUi.serve, swaggerUi.setup(swaggerDocs));
 
 // Utility function to generate loan schedule
-const generateSchedule = (amount, weeks, interestRate, startDate) => {
+const generateSchedule = async (loanId, amount, weeks, interestRate, startDate) => {
     const totalAmount = amount + (amount * interestRate);
     const weeklyPayment = parseFloat((totalAmount / weeks).toFixed(2));
     let schedule = [];
@@ -38,14 +37,18 @@ const generateSchedule = (amount, weeks, interestRate, startDate) => {
 
     for (let i = 1; i <= weeks; i++) {
         schedule.push({
-            week: i,
+            loanId,
             amount: weeklyPayment,
+            dueDate: new Date(currentDate).toISOString().split("T")[0],
             paid: false,
-            dueDate: new Date(currentDate).toISOString().split("T")[0] // Set due date
+            createdAt: new Date(),
+            updatedAt: new Date()
         });
         currentDate.setDate(currentDate.getDate() + 7); // Move to next week
     }
-    return schedule;
+
+    // Bulk insert payments
+    await Payment.bulkCreate(schedule);
 };
 
 // Helper to get missed payments
@@ -98,21 +101,43 @@ const getMissedPayments = async (loanId) => {
 app.post("/loan", async (req, res) => {
     try {
         const { borrowerId, amount, weeks, interestRate, startDate } = req.body;
+        const loanStartDate = startDate ? new Date(startDate) : new Date();
+        const totalAmount = amount + (amount * interestRate);
+        const weeklyPayment = parseFloat((totalAmount / weeks).toFixed(2));
 
-        const existingLoan = await Loan.findOne({ where: { borrowerId } });
-        if (existingLoan) return res.status(400).json({ error: "Loan already exists" });
-
-        const newLoan = await Loan.create({
-            borrowerId, amount,
-            outstanding: amount + (amount * interestRate),
-            weeks, interestRate, startDate
+        const loan = await Loan.create({
+            id: uuidv4(),
+            borrowerId,
+            amount,
+            outstanding: totalAmount,
+            weeks,
+            interestRate,
+            startDate: loanStartDate,
         });
 
-        res.json({ message: "Loan created successfully", loan: newLoan });
+        let currentDate = new Date(loanStartDate);
+        let paymentSchedules = [];
+
+        for (let i = 1; i <= weeks; i++) {
+            paymentSchedules.push({
+                id: uuidv4(),
+                loanId: loan.id,
+                week: i,
+                amount: weeklyPayment,
+                dueDate: new Date(currentDate),
+                paid: false,
+            });
+            currentDate.setDate(currentDate.getDate() + 7); // Move to next week
+        }
+
+        await Payment.bulkCreate(paymentSchedules);
+
+        res.status(201).json({ message: "Loan created successfully", loan });
     } catch (error) {
-        res.status(500).json({ error: error.message });
+        res.status(500).json({ error: "Error creating loan", details: error.message });
     }
 });
+
 
 /**
  * @swagger
@@ -159,21 +184,22 @@ app.get("/loan/:borrowerId/outstanding", async (req, res) => {
 // Check if Borrower is Delinquent
 app.get("/loan/:borrowerId/delinquent", async (req, res) => {
     try {
-        const loan = await Loan.findOne({
-            where: { borrowerId: req.params.borrowerId },
+        const { borrowerId } = req.params;
+        const loan = await Loan.findOne({ where: { borrowerId } });
+
+        if (!loan) return res.status(404).json({ error: "Loan not found" });
+
+        const today = new Date();
+        const missedPayments = await Payment.findAll({
+            where: { loanId: loan.id, paid: false, dueDate: { [Op.lt]: today } },
         });
 
-        if (!loan) {
-            return res.status(404).json({ error: "Loan not found" });
-        }
-
-        const missedPayments = await getMissedPayments(loan.id);
         res.json({ delinquent: missedPayments.length >= 2, missedPayments });
     } catch (error) {
-        console.error("Error fetching delinquent status:", error);
-        res.status(500).json({ error: "Internal server error" });
+        res.status(500).json({ error: "Error fetching delinquent status", details: error.message });
     }
 });
+
 
 
 /**
@@ -209,22 +235,53 @@ app.post("/loan/:borrowerId/pay", async (req, res) => {
     try {
         const { borrowerId } = req.params;
         const { amount } = req.body;
-
         const loan = await Loan.findOne({ where: { borrowerId } });
+
         if (!loan) return res.status(404).json({ error: "Loan not found" });
 
-        if (loan.outstanding < amount) return res.status(400).json({ error: "Overpayment not allowed" });
+        const today = new Date();
+        const duePayments = await Payment.findAll({
+            where: { loanId: loan.id, paid: false, dueDate: { [Op.lte]: today } },
+            order: [["dueDate", "ASC"]],
+        });
 
-        await Payment.create({ loanId: loan.id, amount });
+        const totalDueAmount = duePayments.reduce((sum, p) => sum + p.amount, 0);
+        if (Math.abs(amount - totalDueAmount) > 0.01)
+            return res.status(400).json({ error: "Must pay exact amount of due payments" });
 
+        // Mark payments as paid
+        for (const payment of duePayments) {
+            await payment.update({ paid: true });
+        }
+
+        // Record the transaction
+        const transaction = await Transaction.create({
+            id: uuidv4(),
+            loanId: loan.id,
+            borrowerId,
+            amountPaid: amount,
+            paymentDate: today,
+        });
+
+        // Link payments to the transaction
+        for (const payment of duePayments) {
+            await TransactionPayment.create({
+                id: uuidv4(),
+                transactionId: transaction.id,
+                paymentId: payment.id,
+            });
+        }
+
+        // Update outstanding balance
         loan.outstanding -= amount;
         await loan.save();
 
-        res.json({ message: "Payment successful", loan });
+        res.json({ message: "Payment successful", transaction });
     } catch (error) {
-        res.status(500).json({ error: error.message });
+        res.status(500).json({ error: "Error processing payment", details: error.message });
     }
 });
+
 
 /**
  * @swagger
@@ -246,25 +303,22 @@ app.post("/loan/:borrowerId/pay", async (req, res) => {
 // Get Loan Schedule
 app.get("/loan/:borrowerId/schedule", async (req, res) => {
     try {
-        const loan = await Loan.findOne({
-            where: { borrowerId: req.params.borrowerId },
-        });
+        const { borrowerId } = req.params;
+        const loan = await Loan.findOne({ where: { borrowerId } });
 
-        if (!loan) {
-            return res.status(404).json({ error: "Loan not found" });
-        }
+        if (!loan) return res.status(404).json({ error: "Loan not found" });
 
         const schedule = await Payment.findAll({
             where: { loanId: loan.id },
-            order: [["dueDate", "ASC"]], // Order payments by due date
+            order: [["week", "ASC"]],
         });
 
         res.json(schedule);
     } catch (error) {
-        console.error("Error fetching loan schedule:", error);
-        res.status(500).json({ error: "Internal server error" });
+        res.status(500).json({ error: "Error fetching schedule", details: error.message });
     }
 });
+
 
 
 /**
@@ -286,12 +340,24 @@ app.get("/loan/:borrowerId/schedule", async (req, res) => {
  */
 // Get Payment History
 app.get("/loan/:borrowerId/payments", async (req, res) => {
-    const loan = await Loan.findOne({ where: { borrowerId: req.params.borrowerId } });
-    if (!loan) return res.status(404).json({ error: "Loan not found" });
+    try {
+        const { borrowerId } = req.params;
+        const loan = await Loan.findOne({ where: { borrowerId } });
 
-    const payments = await Payment.findAll({ where: { loanId: loan.id } });
-    res.json(payments);
+        if (!loan) return res.status(404).json({ error: "Loan not found" });
+
+        const transactions = await Transaction.findAll({
+            where: { loanId: loan.id },
+            include: [{ model: TransactionPayment, include: [Payment] }],
+            order: [["paymentDate", "ASC"]],
+        });
+
+        res.json(transactions);
+    } catch (error) {
+        res.status(500).json({ error: "Error fetching payments", details: error.message });
+    }
 });
+
 
 
 // Only start the server if this script is run directly (prevents issues in tests)

@@ -8,8 +8,7 @@ const Loan = sequelize.define("Loan", {
     outstanding: { type: DataTypes.FLOAT, allowNull: false },
     weeks: { type: DataTypes.INTEGER, allowNull: false },
     interestRate: { type: DataTypes.FLOAT, allowNull: false },
-    startDate: { type: DataTypes.DATEONLY, allowNull: false },
-    missedPayments: { type: DataTypes.INTEGER, defaultValue: 0 }
-}, { timestamps: true });
+    startDate: { type: DataTypes.DATEONLY, allowNull: false }
+});
 
 module.exports = Loan;
