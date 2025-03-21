@@ -198,7 +198,7 @@ app.get("/loan/:borrowerId/delinquent", async (req, res) => {
 
         if (!loan) return res.status(404).json({ error: "Loan not found" });
 
-        const today = new Date();
+        const today = new Date().toISOString().split("T")[0];
         const missedPayments = await Schedule.findAll({
             where: { loanId: loan.id, paid: false, dueDate: { [Op.lt]: today } },
         });
@@ -248,7 +248,7 @@ app.post("/loan/:borrowerId/pay", async (req, res) => {
 
         if (!loan) return res.status(404).json({ error: "Loan not found" });
 
-        const today = new Date();
+        const today = new Date().toISOString().split("T")[0];
         const duePayments = await Schedule.findAll({
             where: { loanId: loan.id, paid: false, dueDate: { [Op.lte]: today } },
             order: [["dueDate", "ASC"]],
