@@ -105,8 +105,7 @@ app.post("/loan/:borrowerId/pay", (req, res) => {
 
     res.json({
         message: "Payment successful",
-        payment: { amount, date: now, coveredWeeks },
-        loan
+        payment: { amount, date: now, coveredWeeks }
     });
 });
 
