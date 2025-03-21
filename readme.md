@@ -78,7 +78,7 @@ Demo available at [billing-demo.veryresto.com/swagger](https://billing-demo.very
 ## How to Run in Local
 1. Clone the repository
 ```
-git clone https://github.com/veryresto/billing.git
+git clone https://github.com/veryresto/billing-engine.git
 cd billing
 ```
 
@@ -102,4 +102,4 @@ npm run start
 
 Try it!
 
-[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/veryresto/simple-express)
+[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/veryresto/billing-engine)
