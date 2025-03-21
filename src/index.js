@@ -15,7 +15,7 @@ const swaggerOptions = {
         info: {
             title: "Loan Billing API",
             version: "1.0.0",
-            description: "API for managing loan payments, tracking outstanding balances, and delinquency status",
+            description: "APIs for managing loan payments, tracking outstanding balances, and delinquency status",
         },
     },
     apis: ["./src/index.js"], // Path to API documentation
