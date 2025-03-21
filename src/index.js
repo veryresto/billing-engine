@@ -27,7 +27,7 @@ const generateSchedule = (amount, weeks, interestRate, startDate) => {
 // Helper to get missed payments
 const getMissedPayments = (loan) => {
     const today = new Date().toISOString().split("T")[0]; // Current date in YYYY-MM-DD format
-    return loan.schedule.filter(payment => !payment.paid && payment.dueDate < today);
+    return loan.schedule.filter(payment => !payment.paid && payment.dueDate <= today);
 };
 
 // Create Loan

@@ -30,7 +30,7 @@ POST {{host}}/loan/{{userId}}/pay
 content-type: application/json
 
 {
-  "amount": "11"
+  "amount": "22"
 }
 
 ### GET payment history
