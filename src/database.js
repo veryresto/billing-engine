@@ -1,11 +1,18 @@
+require("dotenv").config()
 const { Sequelize } = require("sequelize");
 
 // Initialize PostgreSQL connection
-const sequelize = new Sequelize("billing01-db", "postgres", "yourPassword", {
-    host: "localhost",
-    dialect: "postgres",
-    logging: false, // Set true to debug SQL queries
-});
+const sequelize = new Sequelize(
+    process.env.DB_NAME,
+    process.env.DB_USER,
+    process.env.DB_PASSWORD,
+    {
+        host: process.env.DB_HOST,
+        port: process.env.DB_PORT,
+        dialect: process.env.DB_DIALECT || "postgres",
+        logging: false, // Disable logging if not needed
+    }
+);
 
 // Test connection
 sequelize.authenticate()
