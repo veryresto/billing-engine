@@ -76,6 +76,10 @@ cd billing
 ```
 
 2. Setup database postgresql
+Assuming the database is ready, adjust .env accordingly.
+```
+cp .env-example .env
+```
 3. Install dependencies
 ```
 npm install
