@@ -79,7 +79,7 @@ Demo available at [billing-demo.veryresto.com/swagger](https://billing-demo.very
 1. Clone the repository
 ```
 git clone https://github.com/veryresto/billing-engine.git
-cd billing
+cd billing-engine
 ```
 
 2. Setup database postgresql
