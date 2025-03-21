@@ -19,7 +19,13 @@ The database consists of the following tables:
 - **Transaction** → Records actual payments made by the borrower.  
 - **TransactionSchedule** → Links transactions to scheduled payments.  
 
-### 📌 Entity Relationship Diagram (ERD)  
+### Demo Database
+Demo database can be accessed using this connection string. It is a read-replica database from [billing-demo.veryresto.com/swagger](https://billing-demo.veryresto.com/swagger)
+```
+postgresql://neondb_owner:npg_cj7NeVbJiRo4@ep-odd-sound-a1c4nnz2-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require
+```
+
+### Entity Relationship Diagram (ERD)  
 
 ```mermaid
 erDiagram
@@ -60,6 +66,7 @@ erDiagram
 ```
 
 ## API Endpoints
+Demo available at [billing-demo.veryresto.com/swagger](https://billing-demo.veryresto.com/swagger)
 | Method  | Endpoint                        | Description                                      |
 |---------|---------------------------------|--------------------------------------------------|
 | **POST** | `/loan`                        | Create a loan for a borrower                    |
