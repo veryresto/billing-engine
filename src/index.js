@@ -200,7 +200,7 @@ app.get("/loan/:borrowerId/delinquent", async (req, res) => {
 
         const today = new Date().toISOString().split("T")[0];
         const missedPayments = await Schedule.findAll({
-            where: { loanId: loan.id, paid: false, dueDate: { [Op.lt]: today } },
+            where: { loanId: loan.id, paid: false, dueDate: { [Op.lte]: today } },
         });
 
         res.json({ delinquent: missedPayments.length >= 2, missedPayments });
