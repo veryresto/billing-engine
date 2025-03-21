@@ -35,33 +35,36 @@ erDiagram
     Schedule ||--|{ TransactionSchedule : is_paid_by
 
     Loan {
-        STRING id
+        UUID id
         STRING borrowerId
-        DECIMAL amount
-        DECIMAL outstanding
+        FLOAT amount
+        FLOAT outstanding
+        INTEGER weeks
+        FLOAT interestRate
         DATE startDate
     }
 
     Schedule {
-        STRING id
-        STRING loanId
+        UUID id
+        UUID loanId
+        INTEGER week
+        FLOAT amount
         DATE dueDate
-        DECIMAL amount
         BOOLEAN paid
     }
 
     Transaction {
-        STRING id
-        STRING loanId
+        UUID id
+        UUID loanId
         STRING borrowerId
-        DECIMAL amountPaid
+        FLOAT amountPaid
         DATE paymentDate
     }
 
     TransactionSchedule {
-        STRING id
-        STRING transactionId
-        STRING scheduleId
+        UUID id
+        UUID transactionId
+        UUID scheduleId
     }
 ```
 
