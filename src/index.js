@@ -254,9 +254,12 @@ app.post("/loan/:borrowerId/pay", async (req, res) => {
             order: [["dueDate", "ASC"]],
         });
 
+        if (duePayments.length === 0)
+            return res.status(400).json({ error: "No overdue payments available" });
+
         const totalDueAmount = duePayments.reduce((sum, p) => sum + p.amount, 0);
         if (Math.abs(amount - totalDueAmount) > 0.01)
-            return res.status(400).json({ error: "Must pay exact amount of due payments" });
+            return res.status(400).json({ error: "Must pay exact amount of due payments: " + totalDueAmount });
 
         // Mark payments as paid
         for (const payment of duePayments) {
