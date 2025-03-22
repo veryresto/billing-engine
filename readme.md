@@ -73,9 +73,10 @@ Demo available at [billing-demo.veryresto.com/swagger](https://billing-demo.very
 | Method  | Endpoint                        | Description                                      |
 |---------|---------------------------------|--------------------------------------------------|
 | **POST** | `/loan`                        | Create a loan for a borrower                    |
-| **GET**  | `/loan/:borrowerId/schedule`   | Get payment schedule of a borrower              |
+| **GET**  | `/loan/:borrowerId/outstanding`| Get outstanding amount of a borrower            |
 | **GET**  | `/loan/:borrowerId/delinquent` | Check if borrower is delinquent                 |
 | **POST** | `/loan/:borrowerId/pay`        | Make a loan payment                             |
+| **GET**  | `/loan/:borrowerId/schedule`   | Get payment schedule of a borrower              |
 | **GET**  | `/loan/:borrowerId/payments`   | Get all actual payments made by the borrower    |
 
 ## How to Run in Local
